@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Recipes.Data;
 using Recipes.Models;
 using Recipes.Services;
 using System;
@@ -32,10 +34,17 @@ namespace Recipes
             services.Configure<RecipeDatabaseSettings>(
                Configuration.GetSection(nameof(RecipeDatabaseSettings)));
 
+            services.AddDbContext<ApplicationContext>(options =>
+            options.UseSqlServer(
+                Configuration.GetConnectionString("DefaultConnection"),
+                b => b.MigrationsAssembly(typeof(ApplicationContext).Assembly.FullName)));
+
             services.AddSingleton<IRecipeDatabaseSettings>(sp =>
                 sp.GetRequiredService<IOptions<RecipeDatabaseSettings>>().Value);
 
             services.AddSingleton<RecipeService>();
+
+            services.AddScoped<IRecipeService, RecipeServiceEF>();
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
